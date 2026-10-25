@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Setup</title>
+<style>body{font-family:sans-serif;max-width:420px;margin:24px auto;padding:0 16px}input,button{width:100%;padding:12px;margin:6px 0;font-size:16px;box-sizing:border-box}pre{background:#f3f4f6;padding:10px;white-space:pre-wrap;word-break:break-all}h3{margin-top:24px}</style></head>
+<body>
+<h2>Тизимни тайёрлаш</h2>
+<h3>1. Директор яратиш (бир марта)</h3>
+<input id="key" type="password" placeholder="SETUP_KEY">
+<input id="phone" value="998998055858" inputmode="numeric">
+<input id="name" value="Директор">
+<input id="pw" type="password" placeholder="Парол (камида 8 белги)">
+<button onclick="setup()">Яратиш</button>
+<pre id="o1"></pre>
+<h3>2. Кириш синаш</h3>
+<input id="lp" value="998998055858" inputmode="numeric">
+<input id="lpw" type="password" placeholder="Парол">
+<button onclick="login()">Кириш</button>
+<pre id="o2"></pre>
+<script>
+const $ = id => document.getElementById(id).value;
+const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(r => r.json().catch(() => ({ status: r.status })));
+async function setup() {
+  const r = await post('/api/setup', { key: $('key'), phone: $('phone'), name: $('name'), password: $('pw') });
+  document.getElementById('o1').textContent = JSON.stringify(r);
+}
+async function login() {
+  const r = await post('/api/auth?action=login', { phone: $('lp'), password: $('lpw') });
+  if (r.token) r.token = '(яширилди)';
+  document.getElementById('o2').textContent = JSON.stringify(r, null, 2);
+}
+</script>
+</body></html>
