@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lux Home Tizim — Ходимлар</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:0;background:#f4f6fb;color:#111}
+header{background:#1e3a8a;color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+main{padding:14px;max-width:640px;margin:auto}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+input,button{font:inherit;padding:10px;border-radius:8px;border:1px solid #cbd5e1;width:100%;box-sizing:border-box;margin:4px 0}
+button{background:#2563eb;color:#fff;border:0;cursor:pointer}
+button.r{background:#dc2626}button.g{background:#059669}button.s{background:#334155;width:auto;padding:8px 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.chip{border:1px solid #cbd5e1;border-radius:99px;padding:5px 10px;font-size:13px;cursor:pointer;user-select:none}
+.chip.on{background:#2563eb;color:#fff;border-color:#2563eb}
+.mu{color:#64748b;font-size:13px}
+.tag{font-size:12px;padding:2px 8px;border-radius:99px;background:#e0e7ff;color:#1e3a8a;white-space:nowrap}
+.off{opacity:.55}
+.row{display:flex;gap:6px}
+</style></head><body>
+<header><b>Lux Home Tizim · Ходимлар</b><button id="out" class="s" style="display:none" onclick="logout()">Чиқиш</button></header>
+<main id="app"></main>
+<script>
+const SK=[['sales','📞 Сотув'],['zamer','📐 Замер'],['prod:0','🏭 Роскрой'],['prod:1','🏭 Кесиш'],['prod:2','🏭 Ровер'],['prod:3','🏭 Малярка'],['prod:4','🏭 Кромка'],['prod:5','🏭 Цех'],['prod:6','🏭 Доставка'],['prod:7','🏭 Сборка'],['debt','💰 Қарз'],['an','📊 Таҳлил'],['adm','👥 Админ']];
+const FIELDS=[['phone','📞 Телефон'],['addr','📍 Манзил'],['price','💰 Нарх'],['pay','💳 Тўлов'],['msgs','📨 Хабар']];
+const ERR={bad_phone:'Телефон +998 билан 12 рақам бўлиши керак',name_required:'Исм ва фамилияни киритинг',password_short:'Парол камида 8 белги бўлсин',exists:'Бу телефон аллақачон рўйхатда',director_locked:'Директорнинг рухсатини олиб бўлмайди',not_found:'Ходим топилмади',forbidden:'Рухсат йўқ',unauthorized:'Сессия тугаган, қайта киринг',bad_credentials:'Телефон ёки парол нотўғри',bad_old_password:'Эски парол нотўғри'};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let TOKEN=localStorage.getItem('lux_token')||'';
+let USERS=[];
+const api=async(path,method='GET',body)=>{const r=await fetch(path,{method,headers:{'Content-Type':'application/json',Authorization:'Bearer '+TOKEN},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json().catch(()=>({}))}};
+const msg=d=>ERR[d&&d.error]||'Хато юз берди';
+
+function loginView(note=''){$('out').style.display='none';$('app').innerHTML=`<div class=card><b>Кириш</b><input id=lp inputmode=numeric placeholder="Телефон (998...)"><input id=lpw type=password placeholder="Парол"><button onclick="doLogin()">Кириш</button><div class=mu>${esc(note)}</div></div>`}
+async function doLogin(){const r=await api('/api/auth?action=login','POST',{phone:$('lp').value,password:$('lpw').value});if(r.data.ok){TOKEN=r.data.token;localStorage.setItem('lux_token',TOKEN);start()}else loginView(msg(r.data))}
+async function logout(){await api('/api/auth?action=logout','POST');TOKEN='';localStorage.removeItem('lux_token');loginView('Чиқдингиз')}
+
+async function start(){
+  const me=await api('/api/auth?action=me');
+  if(!me.data.ok){TOKEN='';localStorage.removeItem('lux_token');return loginView('Сессия тугаган, қайта киринг')}
+  $('out').style.display='';
+  await load();
+}
+async function load(){
+  const l=await api('/api/staff?action=list');
+  if(l.status===403)return $('app').innerHTML='<div class=card>🔒 Бу саҳифа фақат Админ рухсати борлар учун</div>';
+  if(!l.data.ok)return loginView(msg(l.data));
+  USERS=l.data.users;render();
+}
+
+function chipRow(u,g,list){const sel=u[g]||[];return `<div class=chips>${list.map(([k,t])=>`<span class="chip ${sel.includes(k)?'on':''}" onclick="tg('${u.phone}','${g}','${k}')">${t}</span>`).join('')}</div>`}
+function newRow(g,list){return `<div class=chips>${list.map(([k,t])=>`<span class=chip data-g="${g}" data-k="${k}" onclick="this.classList.toggle('on')">${t}</span>`).join('')}</div>`}
+
+function render(){
+  const cards=USERS.map(u=>`<div class="card ${u.act?'':'off'}">
+    <div style="display:flex;justify-content:space-between;gap:8px"><div><b>${esc(u.name)}</b><div class=mu>+${esc(u.phone)} · ${esc(u.role)}</div></div><span class=tag>${u.act?'Фаол':'Рухсат олинган'}</span></div>
+    <div class=mu><b>Кўриш бўлимлари</b></div>${chipRow(u,'p',SK)}
+    <div class=mu><b>Тугма босиш (фақат шу бўлимда)</b></div>${chipRow(u,'a',SK)}
+    <div class=mu><b>Маълумот кўриниши</b></div>${chipRow(u,'f',FIELDS)}
+    <div class=row><button class="${u.act?'r':'g'}" onclick="tact('${u.phone}',${!u.act})">${u.act?'⛔ Олиш':'✅ Қайтариш'}</button><button onclick="rpw('${u.phone}')">🔑 Парол</button><button class=r onclick="del('${u.phone}')">🗑</button></div>
+  </div>`).join('');
+  $('app').innerHTML=`<div class=card><b>➕ Янги ходим</b>
+    <input id=nP inputmode=numeric placeholder="Телефон (998...)">
+    <input id=nN placeholder="Исм ва фамилия">
+    <input id=nR placeholder="Лавозим (масалан: Сборкачи)">
+    <input id=nW type=password placeholder="Бошланғич парол (камида 8 белги)">
+    <div class=mu><b>Кўриш бўлимлари</b></div>${newRow('p',SK)}
+    <div class=mu><b>Тугма босиш</b></div>${newRow('a',SK)}
+    <div class=mu><b>Маълумот кўриниши</b></div>${newRow('f',FIELDS)}
+    <button onclick="addU()">Қўшиш</button></div>${cards}
+    <div class=card><b>🔑 Ўз паролингизни ўзгартириш</b><input id=op type=password placeholder="Эски парол"><input id=np type=password placeholder="Янги парол (камида 8)"><button onclick="myPw()">Ўзгартириш</button></div>`;
+}
+
+async function tg(phone,g,k){
+  const u=USERS.find(x=>x.phone==phone);const a=[...(u[g]||[])];const i=a.indexOf(k);i<0?a.push(k):a.splice(i,1);
+  const r=await api('/api/staff?action=update','POST',{phone,[g]:a});
+  if(r.data.ok){await load()}else alert(msg(r.data));
+}
+async function tact(phone,act){const r=await api('/api/staff?action=update','POST',{phone,act});r.data.ok?load():alert(msg(r.data))}
+async function rpw(phone){const p=prompt('Янги парол (камида 8 белги):');if(!p)return;const r=await api('/api/staff?action=resetpw','POST',{phone,password:p});alert(r.data.ok?'Парол янгиланди':msg(r.data))}
+async function del(phone){if(!confirm('Ходимни рўйхатдан ўчирасизми?'))return;const r=await api('/api/staff?action=delete','POST',{phone});r.data.ok?load():alert(msg(r.data))}
+async function addU(){
+  const sel=g=>[...document.querySelectorAll(`[data-g="${g}"].on`)].map(e=>e.dataset.k);
+  const r=await api('/api/staff?action=add','POST',{phone:$('nP').value,name:$('nN').value,role:$('nR').value,password:$('nW').value,p:sel('p'),a:sel('a'),f:sel('f')});
+  r.data.ok?load():alert(msg(r.data));
+}
+async function myPw(){const r=await api('/api/auth?action=password','POST',{oldPassword:$('op').value,newPassword:$('np').value});alert(r.data.ok?'Парол ўзгартирилди':msg(r.data))}
+
+TOKEN?start():loginView();
+</script></body></html>
