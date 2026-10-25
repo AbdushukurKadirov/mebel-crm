@@ -1,4 +1,5 @@
-// Логин, сессия, чиқиш: ?action=login (POST), ?action=me (GET), ?action=logout (POST)
+// Логин, сессия, чиқиш, парол ўзгартириш
+// ?action=login (POST) · ?action=me (GET) · ?action=logout (POST) · ?action=password (POST)
 const crypto = require('crypto');
 const KV_URL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -13,7 +14,13 @@ async function kv(cmd) {
   return (await r.json()).result;
 }
 
+function hashPw(pw) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  return salt + '$' + crypto.scryptSync(String(pw), salt, 64).toString('hex');
+}
+
 function verify(pw, stored) {
+  if (!stored) return false;
   const [salt, h] = String(stored).split('$');
   const t = crypto.scryptSync(String(pw || ''), salt, 64).toString('hex');
   return crypto.timingSafeEqual(Buffer.from(h, 'hex'), Buffer.from(t, 'hex'));
@@ -59,6 +66,17 @@ module.exports = async (req, res) => {
   if (action === 'logout' && req.method === 'POST') {
     const t = bearer(req);
     if (t) await kv(['DEL', 'session:' + t]);
+    return res.status(200).json({ ok: true });
+  }
+
+  if (action === 'password' && req.method === 'POST') {
+    const u = await sessionUser(req);
+    if (!u) return res.status(401).json({ ok: false });
+    const { oldPassword, newPassword } = req.body || {};
+    if (!verify(oldPassword, u.pw)) return res.status(403).json({ ok: false, error: 'bad_old_password' });
+    if (String(newPassword || '').length < 8) return res.status(400).json({ ok: false, error: 'password_short' });
+    u.pw = hashPw(newPassword);
+    await kv(['SET', 'user:' + u.phone, JSON.stringify(u)]);
     return res.status(200).json({ ok: true });
   }
 
