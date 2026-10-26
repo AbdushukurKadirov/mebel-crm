@@ -16,7 +16,7 @@ button.r{background:#dc2626}button.g{background:#059669}button.s{background:#334
 .off{opacity:.55}
 .row{display:flex;gap:6px}
 </style></head><body>
-<header><b>Lux Home Tizim · Ходимлар</b><button id="out" class="s" style="display:none" onclick="logout()">Чиқиш</button></header>
+<header><b>Lux Home Tizim</b><button id="out" class="s" style="display:none" onclick="logout()">Чиқиш</button></header>
 <main id="app"></main>
 <script>
 const SK=[['sales','📞 Сотув'],['zamer','📐 Замер'],['prod:0','🏭 Роскрой'],['prod:1','🏭 Кесиш'],['prod:2','🏭 Ровер'],['prod:3','🏭 Малярка'],['prod:4','🏭 Кромка'],['prod:5','🏭 Цех'],['prod:6','🏭 Доставка'],['prod:7','🏭 Сборка'],['debt','💰 Қарз'],['an','📊 Таҳлил'],['adm','👥 Админ']];
@@ -29,7 +29,7 @@ let USERS=[];
 const api=async(path,method='GET',body)=>{const r=await fetch(path,{method,headers:{'Content-Type':'application/json',Authorization:'Bearer '+TOKEN},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json().catch(()=>({}))}};
 const msg=d=>ERR[d&&d.error]||'Хато юз берди';
 
-function loginView(note=''){$('out').style.display='none';$('app').innerHTML=`<div class=card><b>Кириш</b><input id=lp inputmode=numeric placeholder="Телефон (998...)"><input id=lpw type=password placeholder="Парол"><button onclick="doLogin()">Кириш</button><div class=mu>${esc(note)}</div></div>`}
+function loginView(){location.href='/'}
 async function doLogin(){const r=await api('/api/auth?action=login','POST',{phone:$('lp').value,password:$('lpw').value});if(r.data.ok){TOKEN=r.data.token;localStorage.setItem('lux_token',TOKEN);start()}else loginView(msg(r.data))}
 async function logout(){await api('/api/auth?action=logout','POST');TOKEN='';localStorage.removeItem('lux_token');loginView('Чиқдингиз')}
 
