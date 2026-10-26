@@ -76,6 +76,9 @@ svg text{fill:var(--mu);font-size:10px}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script>
+window.addEventListener('error',function(e){var a=document.getElementById('app');if(a&&!a.innerHTML.trim())a.innerHTML='<div style="padding:16px;font-size:14px;color:#b91c1c;word-break:break-word">Хато: '+(e.message||'номаълум')+' (қатор '+(e.lineno||'?')+')</div>'});
+window.addEventListener('unhandledrejection',function(e){var a=document.getElementById('app');var r=e.reason;if(a&&!a.innerHTML.trim())a.innerHTML='<div style="padding:16px;font-size:14px;color:#b91c1c;word-break:break-word">Хато (сўров): '+((r&&r.message)||r||'номаълум')+'</div>'});
+
 const MN=['Январь','Феврал','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
 const ROOMS={'Ошхона':['Гарнитур','Остравок','Обшивка'],'Йўлак':['Шкаф','Обшивка'],'Катталар ётоқхонаси':['Гарнитур тўлиқ','Кровать','Шкаф','Под-тв','Обшивка'],'Болалар ётоқхонаси':['Тўлиқ','Шкаф','Кровать','Дарс столъ','Обшивка']};
 const PS=['Роскрой','Кесиш','Ровер','Малярка','Кромка','Цех оброботка','Доставка','Сборка'];
@@ -142,6 +145,4 @@ function rsum(c){const r=c.R,h=r.hw,k=r.rk;return `<div class="mu" style="margin
 function tled(i,v){const c=C.find(x=>x.id==i);c.rk.led=v;rcalc0(c);rk_r()}
 const CC={'Ташкент':'69.2401,41.2995','Ташкентская область':'69.58,41.4689','Самарканд':'66.9597,39.627','Бухара':'64.4286,39.7747','Андижан':'72.3442,40.7821','Наманган':'71.6726,40.9983','Фергана':'71.7864,40.3864','Нукус':'59.6103,42.4531','Карши':'65.7891,38.8606','Навои':'65.3792,40.0844','Джизак':'67.8422,40.1158','Гулистан':'68.7842,40.4897','Термез':'67.2783,37.2242','Ургенч':'60.6333,41.55'};
 function adr(i,k,v){const c=C.find(x=>x.id==i);c[k]=v;c.addr=[c.dist,c.str?(c.stt||'улица')+' '+c.str:'',c.house,c.apt?'кв./ориентир '+c.apt:''].filter(Boolean).join(', ')}
-function gps(i){const c=C.find(x=>x.id==i);if(!navigator.geolocation){alert('Жойлашув қўлланмайди');return}navigator.geolocation.getCurrentPosition(p=>{c.ya=p.coords.latitude.toFixed(6)+', '+p.coords.longitude.toFixed(6);const y=scrollY;go();scrollTo(0,y)},()=>alert('Жойлашувга рухсат берилмади. Координатани қўлда киритинг'),{enableHighAccuracy:true,timeout:15000})}
-function styBox(c){return ro(c)?'<div class="ro">'+sb0(c)+'</div>':sb0(c)}
-function sb0(c){const l=itl(c);return (l.map(k=>`<div style="padding:6px 0;border-bottom:1px solid var(--bd)"><div class="mu">${k}</div><div class="btns" style="margin-top:4px"><button class="${c.st[k]=='ht'?'p':''}" onclick='setSt(${c.id},"${k}","ht")'>Хай-тек</button><button class="${c.st[k]=='kr'?'p':''}" onclick='setSt(${c.id},"${k}","kr")'>Крашений</button></div></div>`).join('')||'<div class="mu">Аввал мебель танла
+function gps(i){const c=C.find(x=>x.id==i);if(!navigator.geolocation){alert('Жойлашув қўлланмайди');return}navigator.geolocation.getCurrentPosition(p=>{c.ya=p.coords.latitude.toFixed(6)+', '+p.coords.longitude.toFixed(6);const y=scrollY;go();scrollTo(0,y)},()=>alert('Жойлашувга рухсат берилмади. Координатани қўл
